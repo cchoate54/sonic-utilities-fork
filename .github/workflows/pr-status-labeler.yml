@@ -1,0 +1,34 @@
+name: Create status image
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Dockerfile*'
+      - 'Makefile'
+      - 'packages/*'
+jobs:
+  build:
+    name: Build status image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build status image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          tags: pr-${{ github.event.pull_request.number }}-status-image
+      - name: Upload status image to GitHub Packages
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push status image to GitHub Packages
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}/pr-${{ github.event.pull_request.number }}-status-image
+          cache-from: type=local,src=./cache
+          cache-to: type=local,dest=./cache
