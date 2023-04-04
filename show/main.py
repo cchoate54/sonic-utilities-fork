@@ -1481,6 +1481,56 @@ def bgp(namespace, verbose):
     print(output)
 
 
+# 'isis' subcommand ("show runningconfiguration isis")
+@runningconfiguration.command()
+@click.option('--verbose', is_flag=True, help="Enable verbose output")
+@click.option('--config_db', is_flag=True, help="Enable config DB output")
+@click.option('--namespace', '-n', 'namespace', required=False, default=None, type=str, show_default=False,
+              help='Option needed for multi-asic only: provide namespace name',
+              callback=multi_asic_util.multi_asic_namespace_validation_callback)
+def isis(namespace, config_db, verbose):
+    """
+    Show ISIS running configuration
+    Note:
+        multi-asic can run 'show run isis' and show from all asics, or 'show run isis -n <ns>'
+        single-asic only run 'show run isis', '-n' is not available
+    """
+
+    if multi_asic.is_multi_asic():
+        if namespace and namespace not in multi_asic.get_namespace_list():
+            ctx = click.get_current_context()
+            ctx.fail("invalid value for -n/--namespace option. provide namespace from list {}".format(multi_asic.get_namespace_list()))
+    if not multi_asic.is_multi_asic() and namespace:
+        ctx = click.get_current_context()
+        ctx.fail("-n/--namespace is not available for single asic")
+
+    if (config_db):
+        cmd = "sonic-cfggen -d --var-json ISIS_GLOBAL"
+        run_command(cmd, display_cmd=verbose)
+
+        cmd = "sonic-cfggen -d --var-json ISIS_LEVEL"
+        run_command(cmd, display_cmd=verbose)
+
+        cmd = "sonic-cfggen -d --var-json ISIS_INTERFACE"
+        run_command(cmd, display_cmd=verbose)
+    else:
+        output = ""
+        cmd = "show running-config isis"
+        import utilities_common.bgp_util as bgp_util
+        if multi_asic.is_multi_asic():
+            if not namespace:
+                ns_list = multi_asic.get_namespace_list()
+                for ns in ns_list:
+                    output += "\n------------Showing running config isis on {}------------\n".format(ns)
+                    output += bgp_util.run_bgp_show_command(cmd, ns)
+            else:
+                output += "\n------------Showing running config isis on {}------------\n".format(namespace)
+                output += bgp_util.run_bgp_show_command(cmd, namespace)
+        else:
+            output += bgp_util.run_bgp_show_command(cmd)
+        print(output)
+
+
 # 'interfaces' subcommand ("show runningconfiguration interfaces")
 @runningconfiguration.command()
 @click.argument('interfacename', required=False)

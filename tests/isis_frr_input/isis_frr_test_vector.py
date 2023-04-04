@@ -452,6 +452,85 @@ def mock_show_isis_interface(request):
     else:
         return ""
 
+show_run_isis_output = \
+"""Building configuration...
+
+Current configuration:
+!
+frr version 8.2.2
+frr defaults traditional
+hostname vlab-01
+log syslog informational
+log facility local4
+no service integrated-vtysh-config
+!
+password zebra
+enable password zebra
+!
+interface PortChannel101
+ ip router isis 1
+ ipv6 router isis 1
+ isis network point-to-point
+exit
+!
+router isis 1
+ is-type level-2-only
+ net 49.0001.1720.1700.0002.00
+ lsp-mtu 1383
+ lsp-timers level-1 gen-interval 30 refresh-interval 900 max-lifetime 1200
+ lsp-timers level-2 gen-interval 30 refresh-interval 305 max-lifetime 900
+ log-adjacency-changes
+exit
+!
+end
+"""
+
+show_run_isis_config_db_output = \
+"""
+{
+    "1": {
+        "dynamic-hostname": "true",
+        "level-capability": "level-2",
+        "log-adjacency-changes": "true",
+        "lsp-mtu-size": "1383",
+        "net": "49.0001.1720.1700.0002.00"
+    }
+}
+{
+    "1|level-2": {
+        "lsp-maximum-lifetime": "350",
+        "lsp-refresh-interval": "305"
+    }
+}
+{
+    "1|PortChannel101": {
+        "hello-padding": "false",
+        "ifname": "PortChannel101",
+        "instance": "1",
+        "ipv4-routing-instance": "1",
+        "ipv6-routing-instance": "1",
+        "network-type": "POINT_TO_POINT_NETWORK"
+    }
+}
+"""
+
+show_run_isis_invalid_help_output = \
+"""
+Usage: show run isis [OPTIONS]
+Try "show run isis -h" for help.
+
+Error: Got unexpected extra argument (?)
+"""
+
+def mock_show_run_isis(request):
+    if request.param == 'show_run_isis_output':
+        return show_run_isis_output
+    elif request.param == 'show_run_isis_config_db_output':
+        return show_run_isis_config_db_output
+    elif request.param == 'show_run_isis_invalid_help_output':
+        return show_run_isis_invalid_help_output
+    else:
+        return ""
 
 testData = {
     'isis_neighbors': {
@@ -553,5 +632,20 @@ testData = {
         'args': ['sonic1'],
         'rc': 2,
         'rc_output': isis_interface_unknown_ifname_output
+    },
+    'show_run_isis_output': {
+        'args': [],
+        'rc': 0,
+        'rc_output': show_run_isis_output
+    },
+    'show_run_isis_config_db_output': {
+        'args': ['--config_db'],
+        'rc': 0,
+        'rc_output': show_run_isis_config_db_output
+    },
+    'show_run_isis_invalid_help_output': {
+        'args': ['?'],
+        'rc': 2,
+        'rc_output': show_run_isis_invalid_help_output
     },
 }
