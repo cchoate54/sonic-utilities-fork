@@ -117,3 +117,19 @@ def interface(interface, verbose, display):
     output += bgp_util.run_bgp_show_command(command)
 
     click.echo(output.rstrip('\n'))
+
+
+# 'interface' subcommand ("show isis summary") 
+@isis.command()
+@click.option('--json', is_flag=True, help="Enable json output")
+def summary(verbose):
+    """Show ISIS summary"""
+
+    command = 'show isis summary'
+    if json:
+        command += ' json'
+
+    output = ""
+    output += bgp_util.run_bgp_show_command(command)
+
+    click.echo(output.rstrip('\n'))
